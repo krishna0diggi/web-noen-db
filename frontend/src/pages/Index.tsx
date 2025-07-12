@@ -116,8 +116,20 @@ const Index = ({ showServiceSection = true }: IndexProps) => {
       </div> */}
         {/* Hero Section */}
         <AnimatedSection>
-          <section className="py-10 sm:py-20 px-4 sm:px-6">
-            <div className="w-full max-w-screen-lg mx-auto text-center">
+          <section
+            className="py-10 sm:py-20 px-4 sm:px-6 relative min-h-[620px] flex items-center justify-center"
+            style={{
+              backgroundImage: `url('https://res.cloudinary.com/dqkqmpy5m/image/upload/v1752318070/beauty-banner2_la16a9.png')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          >
+            {/* Black fade overlay from bottom */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="w-full h-full bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            </div>
+            <div className="w-full max-w-screen-lg mx-auto text-center relative z-10">
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -129,16 +141,16 @@ const Index = ({ showServiceSection = true }: IndexProps) => {
               </motion.div>
 
               <motion.h1
-                className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent"
+                className="text-5xl md:text-7xl font-extrabold mb-6 bg-gradient-to-r from-pink-700 via-pink-500 to-accent bg-clip-text text-transparent px-2 py-2 rounded-lg inline-block shadow-2xl drop-shadow-lg tracking-tight border border-pink-500/50"
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.4, 0.25, 1] }}
               >
-                Transform Your Beauty
+                Transform <span className="text-pink-400 font-black">Your</span> Beauty
               </motion.h1>
 
-              <motion.p
-                className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
+                <motion.p
+                className="text-md text-white mb-8 max-w-2xl mx-auto px-4 py-3 rounded-lg bg-black/10 shadow-md"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
@@ -180,6 +192,13 @@ const Index = ({ showServiceSection = true }: IndexProps) => {
             </div>
           </section>
         </AnimatedSection>
+
+        {/* Decorative curve after hero section */}
+        <div className="relative -mt-4">
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-24 md:h-32 lg:h-40 block">
+            <path fill="#fff" d="M0,80 C360,160 1080,0 1440,80 L1440,120 L0,120 Z" />
+          </svg>
+        </div>
 
         {/* Services Section (now Category Section) */}
         <AnimatedSection>

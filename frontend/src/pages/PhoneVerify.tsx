@@ -3,6 +3,7 @@ import Register from "./Register";
 import ForgotPassword from "./ForgotPassword";
 import Login from "./Login";
 import { Link } from "react-router-dom";
+import { verifyPhoneNumber } from "@/service/userService/userService";
 
 declare global {
   interface Window {
@@ -39,7 +40,9 @@ const PhoneVerify: React.FC<PhoneVerifyProps> = ({ isForgot }) => {
           phoneNo: user_phone_number,
         });
         setPhone(user_phone_number);
-        verifyPhoneNumber(user_phone_number);
+        // Use the new service
+        const exists = await verifyPhoneNumber(user_phone_number);
+        setPhoneExist(exists);
       };
       window.phoneEmailListener = phoneEmailListener;
 
@@ -49,23 +52,6 @@ const PhoneVerify: React.FC<PhoneVerifyProps> = ({ isForgot }) => {
     };
     SignInButton();
   }, []);
-
-  const verifyPhoneNumber = async (phoneNumber: string) => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/phoneVerify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ phone: phoneNumber }),
-      });
-
-      const serRes = await response.json();
-      setPhoneExist(serRes.exists);
-    } catch (error: any) {
-      console.log("Error:", error.message);
-    }
-  };
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-primary/5 via-accent/5 to-background">

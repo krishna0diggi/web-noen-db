@@ -43,25 +43,36 @@ const CategorySection: React.FC<CategorySectionProps> = ({ categories, loading =
                   whileHover={{ y: -8, scale: 1.03, boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)" }}
                 >
                   <Card
-                    className="group cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 h-full bg-card/90 hover:bg-primary/10 shadow-lg hover:shadow-2xl rounded-2xl overflow-hidden ring-1 ring-border/40 dark:ring-border/60"
+                    className="group cursor-pointer border-2 border-transparent hover:border-primary transition-all duration-300 h-full bg-card/90 hover:bg-primary/10 shadow-lg hover:shadow-2xl rounded-2xl overflow-hidden ring-1 ring-border/40 dark:ring-border/60 flex flex-col items-center justify-start"
                     onClick={() =>
                       navigate(`/service/${cat.slug}`, {
                         state: { id: cat.id },
                       })
                     }
                   >
-                    <CardContent className="p-6 text-center flex flex-col items-center justify-center h-full">
+                    <CardContent className="flex flex-col items-center justify-start h-full w-full pt-8 pb-6 px-4">
+                      {/* Category Circle with GIF */}
                       <motion.div
-                        className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors shadow-md"
+                        className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors shadow-md overflow-hidden border-2 border-primary/30"
                         whileHover={{ scale: 1.1, rotate: 8 }}
                         transition={{ type: 'spring', stiffness: 300 }}
                       >
-                        <span className="text-3xl select-none">{cat.emoji || "✨"}</span>
+                        {cat.gifUrl ? (
+                          <img
+                            src={cat.gifUrl}
+                            alt={cat.name}
+                            className="w-full h-full object-cover object-center"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="text-4xl select-none">{cat.emoji || "✨"}</span>
+                        )}
                       </motion.div>
-                      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors text-foreground drop-shadow-sm">
+                      {/* Title and Description below the circle */}
+                      <h3 className="text-xl font-semibold mb-1 group-hover:text-primary transition-colors text-foreground drop-shadow-sm text-center">
                         {cat.name}
                       </h3>
-                      <p className="text-muted-foreground text-sm mb-2 line-clamp-2">
+                      <p className="text-muted-foreground text-sm mb-2 line-clamp-2 text-center">
                         {cat.description}
                       </p>
                       <Button

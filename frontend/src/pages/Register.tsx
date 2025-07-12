@@ -1,7 +1,11 @@
+import { useEffect } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Label from "@radix-ui/react-label";
 import { UserPlus } from "lucide-react";
+import { motion } from "framer-motion";
+
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 type ForgotPasswordProps = {
   phone: string;
@@ -14,106 +18,141 @@ const Register: React.FC<ForgotPasswordProps> = ({ phone }) => {
     phone: "",
     password: "",
     otp: "",
-    role_id: 2,
+    role_id: 1,
+    address: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Animate form on mount
+  useEffect(() => {
+    setLoaded(true);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register form:", form);
-    // Call your API here
-    navigate("/login");
+    setLoading(true);
+    try {
+      // Replace with your API call
+      const payload = {
+        ...form,
+        otp: Number(form.otp),
+        role_id: Number(form.role_id),
+      };
+      // await api.register(payload);
+      setTimeout(() => {
+        setLoading(false);
+        navigate("/login");
+      }, 1200);
+    } catch (err) {
+      setLoading(false);
+      // handle error
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-2xl shadow-md w-full max-w-md"
-      >
-        <div className="flex justify-center mb-4">
-          <UserPlus className="text-green-600 w-10 h-10" />
-        </div>
-        <h2 className="text-2xl font-semibold text-center mb-4 text-green-600">
-          Register
-        </h2>
-
-        <div className="mb-3">
-          <Label.Root htmlFor="name" className="block text-sm font-medium mb-1">
-            Name
-          </Label.Root>
-          <input
-            id="name"
-            type="text"
-            required
-            className="w-full px-3 py-2 border rounded-md"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </div>
-
-        <div className="mb-3">
-          <Label.Root htmlFor="phone" className="block text-sm font-medium mb-1">
-            Phone
-          </Label.Root>
-          <input
-            id="phone"
-            type="tel"
-            required
-            className="w-full px-3 py-2 border rounded-md"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          />
-        </div>
-
-        <div className="mb-3">
-          <Label.Root htmlFor="password" className="block text-sm font-medium mb-1">
-            Password
-          </Label.Root>
-          <input
-            id="password"
-            type="password"
-            required
-            className="w-full px-3 py-2 border rounded-md"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
-        </div>
-
-        <div className="mb-3">
-          <Label.Root htmlFor="otp" className="block text-sm font-medium mb-1">
-            OTP
-          </Label.Root>
-          <input
-            id="otp"
-            type="number"
-            required
-            className="w-full px-3 py-2 border rounded-md"
-            value={form.otp}
-            onChange={(e) => setForm({ ...form, otp: e.target.value })}
-          />
-        </div>
-
-        {/* <div className="mb-6">
-          <Label.Root htmlFor="role_id" className="block text-sm font-medium mb-1">
-            Role ID
-          </Label.Root>
-          <input
-            id="role_id"
-            type="number"
-            required
-            className="w-full px-3 py-2 border rounded-md"
-            value={form.role_id}
-            onChange={(e) => setForm({ ...form, role_id: e.target.value })}
-          />
-        </div> */}
-
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition"
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 dark:bg-[#18181b]">
+      {loading ? (
+        <LoadingSpinner className="py-20" />
+      ) : (
+        <motion.form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-md w-full max-w-md border border-border/30 dark:border-border/60"
+          initial={{ opacity: 0, y: 40 }}
+          animate={loaded ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          Register
-        </button>
-      </form>
+          <div className="flex justify-center mb-4">
+            <UserPlus className="text-green-600 dark:text-green-400 w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-semibold text-center mb-4 text-green-600 dark:text-green-400">
+            Register
+          </h2>
+          <div className="mb-3">
+            <Label.Root
+              htmlFor="name"
+              className="block text-sm font-medium mb-1"
+            >
+              Name
+            </Label.Root>
+            <input
+              id="name"
+              type="text"
+              required
+              className="w-full px-3 py-2 border rounded-md bg-background dark:bg-zinc-800 text-foreground"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </div>
+          <div className="mb-3">
+            <Label.Root
+              htmlFor="phone"
+              className="block text-sm font-medium mb-1"
+            >
+              Phone
+            </Label.Root>
+            <input
+              id="phone"
+              type="tel"
+              required
+              className="w-full px-3 py-2 border rounded-md bg-background dark:bg-zinc-800 text-foreground"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </div>
+          <div className="mb-3">
+            <Label.Root
+              htmlFor="address"
+              className="block text-sm font-medium mb-1"
+            >
+              Address
+            </Label.Root>
+            <input
+              id="address"
+              type="text"
+              required
+              className="w-full px-3 py-2 border rounded-md bg-background dark:bg-zinc-800 text-foreground"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          </div>
+          <div className="mb-3">
+            <Label.Root
+              htmlFor="password"
+              className="block text-sm font-medium mb-1"
+            >
+              Password
+            </Label.Root>
+            <input
+              id="password"
+              type="password"
+              required
+              className="w-full px-3 py-2 border rounded-md bg-background dark:bg-zinc-800 text-foreground"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+          </div>
+          <div className="mb-3">
+            <Label.Root htmlFor="otp" className="block text-sm font-medium mb-1">
+              OTP
+            </Label.Root>
+            <input
+              id="otp"
+              type="number"
+              required
+              className="w-full px-3 py-2 border rounded-md bg-background dark:bg-zinc-800 text-foreground"
+              value={form.otp}
+              onChange={(e) => setForm({ ...form, otp: e.target.value })}
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-green-600 dark:bg-green-500 text-white py-2 rounded-md hover:bg-green-700 dark:hover:bg-green-600 transition"
+          >
+            Register
+          </button>
+        </motion.form>
+      )}
     </div>
   );
 };

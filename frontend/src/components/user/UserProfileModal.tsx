@@ -39,7 +39,6 @@ export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => 
     address: ""
   });
 
-  // Fetch user profile from API when modal opens
   useEffect(() => {
     const fetchProfile = async () => {
       if (isOpen && userId) {
