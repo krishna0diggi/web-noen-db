@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Calendar, Clock, User, Phone, Mail, Search, Eye, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,287 +11,80 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { appointmentsAdmin, updateAppointmentStatus } from "@/service/appoinmentService/appoinmentService";
+import { motion, AnimatePresence } from "framer-motion";
 
-interface Appointment {
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  customerAvatar: string;
-  service: string;
-  date: string;
-  time: string;
-  duration: string;
+// New appointment type for new data structure
+interface Service {
+  name: string;
   price: number;
-  status: "confirmed" | "pending" | "cancelled" | "completed";
-  notes?: string;
+  durationInMinutes: number;
 }
 
-const initialAppointments: Appointment[] = [
-  // Today's appointments
-  {
-    id: "1",
-    customerName: "Sarah Johnson",
-    customerEmail: "sarah@email.com",
-    customerPhone: "+1 (555) 123-4567",
-    customerAvatar: "SJ",
-    service: "Hair Cut & Style",
-    date: "2024-06-12",
-    time: "10:00 AM",
-    duration: "60 min",
-    price: 85,
-    status: "confirmed",
-    notes: "Client prefers layers and wants to keep length"
-  },
-  {
-    id: "2",
-    customerName: "Emily Davis",
-    customerEmail: "emily@email.com",
-    customerPhone: "+1 (555) 234-5678",
-    customerAvatar: "ED",
-    service: "Manicure & Pedicure",
-    date: "2024-06-12",
-    time: "11:30 AM",
-    duration: "90 min",
-    price: 65,
-    status: "pending",
-  },
-  {
-    id: "3",
-    customerName: "Maria Garcia",
-    customerEmail: "maria@email.com",
-    customerPhone: "+1 (555) 345-6789",
-    customerAvatar: "MG",
-    service: "Facial Treatment",
-    date: "2024-06-12",
-    time: "2:00 PM",
-    duration: "75 min",
-    price: 120,
-    status: "confirmed",
-  },
-  {
-    id: "4",
-    customerName: "Jessica Brown",
-    customerEmail: "jessica@email.com",
-    customerPhone: "+1 (555) 567-8901",
-    customerAvatar: "JB",
-    service: "Hair Color & Highlights",
-    date: "2024-06-12",
-    time: "4:00 PM",
-    duration: "120 min",
-    price: 180,
-    status: "pending",
-    notes: "First time client, wants natural blonde highlights"
-  },
-  
-  // Tomorrow's appointments
-  {
-    id: "5",
-    customerName: "Lisa Wilson",
-    customerEmail: "lisa@email.com",
-    customerPhone: "+1 (555) 456-7890",
-    customerAvatar: "LW",
-    service: "Eyebrow Threading",
-    date: "2024-06-13",
-    time: "9:00 AM",
-    duration: "30 min",
-    price: 25,
-    status: "confirmed",
-  },
-  {
-    id: "6",
-    customerName: "Amanda Taylor",
-    customerEmail: "amanda@email.com",
-    customerPhone: "+1 (555) 678-9012",
-    customerAvatar: "AT",
-    service: "Bridal Makeup",
-    date: "2024-06-13",
-    time: "1:00 PM",
-    duration: "90 min",
-    price: 200,
-    status: "confirmed",
-    notes: "Wedding is on Saturday, trial run needed"
-  },
-  {
-    id: "7",
-    customerName: "Rachel Green",
-    customerEmail: "rachel@email.com",
-    customerPhone: "+1 (555) 789-0123",
-    customerAvatar: "RG",
-    service: "Deep Conditioning Treatment",
-    date: "2024-06-13",
-    time: "3:30 PM",
-    duration: "60 min",
-    price: 75,
-    status: "confirmed",
-  },
-  
-  // Future appointments
-  {
-    id: "8",
-    customerName: "Michelle Lee",
-    customerEmail: "michelle@email.com",
-    customerPhone: "+1 (555) 890-1234",
-    customerAvatar: "ML",
-    service: "Keratin Treatment",
-    date: "2024-06-15",
-    time: "10:00 AM",
-    duration: "180 min",
-    price: 250,
-    status: "confirmed",
-    notes: "Has fine hair, use gentle formula"
-  },
-  {
-    id: "9",
-    customerName: "Nicole White",
-    customerEmail: "nicole@email.com",
-    customerPhone: "+1 (555) 901-2345",
-    customerAvatar: "NW",
-    service: "Gel Manicure",
-    date: "2024-06-16",
-    time: "2:00 PM",
-    duration: "45 min",
-    price: 45,
-    status: "pending",
-  },
-  {
-    id: "10",
-    customerName: "Sophia Martinez",
-    customerEmail: "sophia@email.com",
-    customerPhone: "+1 (555) 012-3456",
-    customerAvatar: "SM",
-    service: "Hair Cut & Blow Dry",
-    date: "2024-06-18",
-    time: "11:00 AM",
-    duration: "75 min",
-    price: 95,
-    status: "confirmed",
-  },
-  
-  // Past completed appointments
-  {
-    id: "11",
-    customerName: "Diana Prince",
-    customerEmail: "diana@email.com",
-    customerPhone: "+1 (555) 123-9876",
-    customerAvatar: "DP",
-    service: "Full Facial Package",
-    date: "2024-06-10",
-    time: "1:00 PM",
-    duration: "90 min",
-    price: 150,
-    status: "completed",
-    notes: "Regular client, loves the hydrating mask"
-  },
-  {
-    id: "12",
-    customerName: "Emma Stone",
-    customerEmail: "emma@email.com",
-    customerPhone: "+1 (555) 234-9876",
-    customerAvatar: "ES",
-    service: "Pedicure Deluxe",
-    date: "2024-06-09",
-    time: "3:00 PM",
-    duration: "60 min",
-    price: 55,
-    status: "completed",
-  },
-  {
-    id: "13",
-    customerName: "Olivia Davis",
-    customerEmail: "olivia@email.com",
-    customerPhone: "+1 (555) 345-9876",
-    customerAvatar: "OD",
-    service: "Hair Styling for Event",
-    date: "2024-06-08",
-    time: "4:00 PM",
-    duration: "90 min",
-    price: 120,
-    status: "completed",
-    notes: "Loved the updo style, wants to book again"
-  },
-  
-  // Past cancelled appointments
-  {
-    id: "14",
-    customerName: "Grace Kelly",
-    customerEmail: "grace@email.com",
-    customerPhone: "+1 (555) 456-9876",
-    customerAvatar: "GK",
-    service: "Hair Color Touch-up",
-    date: "2024-06-07",
-    time: "2:00 PM",
-    duration: "90 min",
-    price: 95,
-    status: "cancelled",
-    notes: "Client cancelled due to illness"
-  },
-  {
-    id: "15",
-    customerName: "Natalie Portman",
-    customerEmail: "natalie@email.com",
-    customerPhone: "+1 (555) 567-9876",
-    customerAvatar: "NP",
-    service: "Eyebrow Wax & Tint",
-    date: "2024-06-05",
-    time: "11:00 AM",
-    duration: "45 min",
-    price: 40,
-    status: "cancelled",
-  },
-];
-
-const services = [
-  "Hair Cut & Style",
-  "Manicure & Pedicure", 
-  "Facial Treatment",
-  "Hair Color & Highlights",
-  "Eyebrow Threading",
-  "Bridal Makeup",
-  "Deep Conditioning Treatment",
-  "Keratin Treatment",
-  "Gel Manicure",
-  "Hair Cut & Blow Dry",
-  "Full Facial Package",
-  "Pedicure Deluxe",
-  "Hair Styling for Event",
-  "Hair Color Touch-up",
-  "Eyebrow Wax & Tint"
-];
+interface Appointment {
+  id: number;
+  userId: number;
+  userName: string;
+  date: string;
+  time: string;
+  totalAmount: string;
+  status: string;
+  services: Service[];
+  userPhone?: string;
+}
 
 export default function Appointments() {
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   const [filter, setFilter] = useState<"all" | "today" | "upcoming" | "completed" | "cancelled">("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+
+  // Fetch appointments from API when filter changes
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      setLoading(true);
+      try {
+        let data;
+        if (filter === "all") {
+          // No filter param for 'all'
+          data = await appointmentsAdmin("");
+        } else {
+          data = await appointmentsAdmin(filter.toLowerCase());
+        }
+        setAppointments(data || []);
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to fetch appointments.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAppointments();
+  }, [filter, toast]);
 
   const handleAddAppointment = (newAppointment: Partial<Appointment>) => {
     const appointment: Appointment = {
-      id: Date.now().toString(),
-      customerName: newAppointment.customerName || "",
-      customerEmail: newAppointment.customerEmail || "",
-      customerPhone: newAppointment.customerPhone || "",
-      customerAvatar: newAppointment.customerName?.split(' ').map(n => n[0]).join('') || "UN",
-      service: newAppointment.service || "",
+      id: Date.now(),
+      userId: newAppointment.userId || 0,
+      userName: newAppointment.userName || "",
       date: newAppointment.date || "",
       time: newAppointment.time || "",
-      duration: newAppointment.duration || "",
-      price: newAppointment.price || 0,
-      status: newAppointment.status || "pending",
-      notes: newAppointment.notes || "",
+      totalAmount: newAppointment.totalAmount || "0",
+      status: newAppointment.status || "Pending",
+      services: newAppointment.services || [],
+      userPhone: newAppointment.userPhone || ""
     };
     setAppointments([...appointments, appointment]);
     setIsDialogOpen(false);
     toast({
       title: "Appointment Created",
-      description: `New appointment for ${appointment.customerName} has been scheduled.`,
+      description: `New appointment for ${appointment.userName} has been scheduled.`,
     });
   };
 
-  const handleEditAppointment = (id: string, updatedAppointment: Partial<Appointment>) => {
+  const handleEditAppointment = (id: number, updatedAppointment: Partial<Appointment>) => {
     const appointment = appointments.find(apt => apt.id === id);
     setAppointments(appointments.map(appointment => 
       appointment.id === id ? { ...appointment, ...updatedAppointment } : appointment
@@ -300,51 +93,57 @@ export default function Appointments() {
     setIsDialogOpen(false);
     toast({
       title: "Appointment Updated",
-      description: `Appointment for ${appointment?.customerName} has been updated.`,
+      description: `Appointment for ${appointment?.userName} has been updated.`,
     });
   };
 
-  const handleDeleteAppointment = (id: string) => {
+  const handleDeleteAppointment = (id: number) => {
     const appointment = appointments.find(apt => apt.id === id);
     setAppointments(appointments.filter(appointment => appointment.id !== id));
     toast({
       title: "Appointment Deleted",
-      description: `Appointment for ${appointment?.customerName} has been cancelled.`,
+      description: `Appointment for ${appointment?.userName} has been cancelled.`,
       variant: "destructive",
     });
   };
 
-  const handleStatusChange = (id: string, status: Appointment["status"]) => {
+  const handleStatusChange = async (id: number, status: Appointment["status"]) => {
     const appointment = appointments.find(apt => apt.id === id);
-    setAppointments(appointments.map(appointment => 
-      appointment.id === id ? { ...appointment, status } : appointment
-    ));
-    toast({
-      title: "Status Updated",
-      description: `Appointment for ${appointment?.customerName} marked as ${status}.`,
-    });
+    setLoading(true);
+    try {
+      await updateAppointmentStatus(id, status);
+      setAppointments(appointments.map(appointment => 
+        appointment.id === id ? { ...appointment, status } : appointment
+      ));
+      toast({
+        title: "Status Updated",
+        description: `Appointment for ${appointment?.userName} marked as ${status}.`,
+      });
+    } catch (error) {
+      toast({ title: "Error", description: `Failed to update status for appointment ${id}.`, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getStatusColor = (status: Appointment["status"]) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "confirmed":
-        return "bg-success text-success-foreground";
+        return "bg-green-100 text-green-700 border border-green-300";
       case "pending":
-        return "bg-warning text-warning-foreground";
+        return "bg-yellow-100 text-yellow-800 border border-yellow-300";
       case "cancelled":
-        return "bg-destructive text-destructive-foreground";
+        return "bg-red-100 text-red-700 border border-red-300";
       case "completed":
-        return "bg-info text-info-foreground";
+        return "bg-blue-100 text-blue-700 border border-blue-300";
       default:
-        return "bg-muted text-muted-foreground";
+        return "bg-gray-100 text-gray-700 border border-gray-300";
     }
   };
 
   const filteredAppointments = (() => {
     const today = new Date().toISOString().split('T')[0];
-    
     let filtered = appointments;
-    
     // Apply status/date filter
     switch (filter) {
       case "today":
@@ -354,100 +153,72 @@ export default function Appointments() {
         filtered = appointments.filter(apt => apt.date > today);
         break;
       case "completed":
-        filtered = appointments.filter(apt => apt.status === "completed");
+        filtered = appointments.filter(apt => apt.status.toLowerCase() === "completed");
         break;
       case "cancelled":
-        filtered = appointments.filter(apt => apt.status === "cancelled");
+        filtered = appointments.filter(apt => apt.status.toLowerCase() === "cancelled");
         break;
       default:
         filtered = appointments;
     }
-    
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(apt => 
-        apt.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        apt.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        apt.service.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        apt.customerPhone.includes(searchQuery)
-      );
-    }
-    
+    // Search filter removed
     return filtered;
   })();
 
+  // --- Update AppointmentForm to match new structure ---
   const AppointmentForm = ({ appointment, onSubmit, onCancel }: {
     appointment?: Appointment | null;
     onSubmit: (appointment: Partial<Appointment>) => void;
     onCancel: () => void;
   }) => {
+    // Only userName, userPhone, date, time, status, and services[]
     const [formData, setFormData] = useState({
-      customerName: appointment?.customerName || "",
-      customerEmail: appointment?.customerEmail || "",
-      customerPhone: appointment?.customerPhone || "",
-      service: appointment?.service || "",
+      userName: appointment?.userName || "",
+      userPhone: appointment?.userPhone || "",
       date: appointment?.date || "",
       time: appointment?.time || "",
-      duration: appointment?.duration || "",
-      price: appointment?.price || 0,
-      status: appointment?.status || "pending" as Appointment["status"],
-      notes: appointment?.notes || "",
+      status: appointment?.status || "Pending",
+      services: appointment?.services || [],
     });
+    // For demo, allow adding a single service (could be extended to multiple)
+    const [service, setService] = useState({ name: "", price: 0, durationInMinutes: 0 });
+
+    const handleAddService = () => {
+      if (service.name && service.price && service.durationInMinutes) {
+        setFormData({ ...formData, services: [...formData.services, { ...service }] });
+        setService({ name: "", price: 0, durationInMinutes: 0 });
+      }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      onSubmit(formData);
+      // Calculate totalAmount as string
+      const totalAmount = formData.services.reduce((sum, s) => sum + s.price, 0).toFixed(2);
+      onSubmit({ ...formData, totalAmount });
     };
 
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="customerName">Customer Name</Label>
+            <Label htmlFor="userName">Customer Name</Label>
             <Input
-              id="customerName"
-              value={formData.customerName}
-              onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+              id="userName"
+              value={formData.userName}
+              onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
               required
             />
           </div>
           <div>
-            <Label htmlFor="customerEmail">Email</Label>
+            <Label htmlFor="userPhone">Phone</Label>
             <Input
-              id="customerEmail"
-              type="email"
-              value={formData.customerEmail}
-              onChange={(e) => setFormData({...formData, customerEmail: e.target.value})}
+              id="userPhone"
+              value={formData.userPhone}
+              onChange={(e) => setFormData({ ...formData, userPhone: e.target.value })}
               required
             />
           </div>
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="customerPhone">Phone</Label>
-            <Input
-              id="customerPhone"
-              value={formData.customerPhone}
-              onChange={(e) => setFormData({...formData, customerPhone: e.target.value})}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="service">Service</Label>
-            <Select value={formData.service} onValueChange={(value) => setFormData({...formData, service: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a service" />
-              </SelectTrigger>
-              <SelectContent>
-                {services.map(service => (
-                  <SelectItem key={service} value={service}>{service}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="date">Date</Label>
@@ -455,7 +226,7 @@ export default function Appointments() {
               id="date"
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({...formData, date: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               required
             />
           </div>
@@ -464,61 +235,54 @@ export default function Appointments() {
             <Input
               id="time"
               value={formData.time}
-              onChange={(e) => setFormData({...formData, time: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
               placeholder="e.g., 10:00 AM"
               required
             />
           </div>
         </div>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="duration">Duration</Label>
-            <Input
-              id="duration"
-              value={formData.duration}
-              onChange={(e) => setFormData({...formData, duration: e.target.value})}
-              placeholder="e.g., 60 min"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="price">Price ($)</Label>
-            <Input
-              id="price"
-              type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="status">Status</Label>
-            <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value as Appointment["status"]})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
         <div>
-          <Label htmlFor="notes">Notes (Optional)</Label>
-          <Textarea
-            id="notes"
-            value={formData.notes}
-            onChange={(e) => setFormData({...formData, notes: e.target.value})}
-            placeholder="Add any special notes or requirements..."
-            rows={3}
-          />
+          <Label>Services</Label>
+          <div className="flex gap-2 mb-2">
+            <Input
+              placeholder="Service Name"
+              value={service.name}
+              onChange={e => setService({ ...service, name: e.target.value })}
+            />
+            <Input
+              placeholder="Price"
+              type="number"
+              value={service.price}
+              onChange={e => setService({ ...service, price: Number(e.target.value) })}
+            />
+            <Input
+              placeholder="Duration (min)"
+              type="number"
+              value={service.durationInMinutes}
+              onChange={e => setService({ ...service, durationInMinutes: Number(e.target.value) })}
+            />
+            <Button type="button" onClick={handleAddService}>Add</Button>
+          </div>
+          <ul className="list-disc pl-5">
+            {formData.services.map((s, i) => (
+              <li key={i}>{s.name} - ₹{s.price} ({s.durationInMinutes} min)</li>
+            ))}
+          </ul>
         </div>
-        
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select value={formData.status} onValueChange={value => setFormData({ ...formData, status: value })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Confirmed">Confirmed</SelectItem>
+              <SelectItem value="Cancelled">Cancelled</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex gap-2 pt-4">
           <Button type="submit" className="flex-1">
             {appointment ? "Update Appointment" : "Create Appointment"}
@@ -555,82 +319,55 @@ export default function Appointments() {
               Cards
             </Button>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" onClick={() => setEditingAppointment(null)}>
-                <Plus className="w-4 h-4" />
-                New Appointment
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingAppointment ? "Edit Appointment" : "Create New Appointment"}
-                </DialogTitle>
-              </DialogHeader>
-              <AppointmentForm
-                appointment={editingAppointment}
-                onSubmit={editingAppointment 
-                  ? (data) => handleEditAppointment(editingAppointment.id, data)
-                  : handleAddAppointment
-                }
-                onCancel={() => setIsDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
+         
         </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search appointments..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
         <div className="flex gap-2 flex-wrap">
           <Button
             variant={filter === "all" ? "default" : "outline"}
             onClick={() => setFilter("all")}
             size="sm"
           >
-            All ({appointments.length})
+            All
           </Button>
           <Button
             variant={filter === "today" ? "default" : "outline"}
             onClick={() => setFilter("today")}
             size="sm"
           >
-            Today ({appointments.filter(apt => apt.date === new Date().toISOString().split('T')[0]).length})
+            Today
           </Button>
           <Button
             variant={filter === "upcoming" ? "default" : "outline"}
             onClick={() => setFilter("upcoming")}
             size="sm"
           >
-            Upcoming ({appointments.filter(apt => apt.date > new Date().toISOString().split('T')[0]).length})
+            Upcoming
           </Button>
           <Button
             variant={filter === "completed" ? "default" : "outline"}
             onClick={() => setFilter("completed")}
             size="sm"
           >
-            Completed ({appointments.filter(apt => apt.status === "completed").length})
+            Completed
           </Button>
           <Button
             variant={filter === "cancelled" ? "default" : "outline"}
             onClick={() => setFilter("cancelled")}
             size="sm"
           >
-            Cancelled ({appointments.filter(apt => apt.status === "cancelled").length})
+            Cancelled
           </Button>
         </div>
       </div>
 
-      {viewMode === "table" ? (
+      {loading ? (
+        <div className="flex justify-center py-8">
+          Loading...
+        </div>
+      ) : viewMode === "table" ? (
         <Card>
           <CardHeader>
             <CardTitle>Appointments Overview</CardTitle>
@@ -639,9 +376,11 @@ export default function Appointments() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>ID</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Service(s)</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Status</TableHead>
@@ -649,192 +388,196 @@ export default function Appointments() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAppointments.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs">
-                            {appointment.customerAvatar}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{appointment.customerName}</p>
-                          <p className="text-sm text-muted-foreground">{appointment.customerEmail}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{appointment.service}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{new Date(appointment.date).toLocaleDateString()}</p>
-                        <p className="text-sm text-muted-foreground">{appointment.time}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{appointment.duration}</TableCell>
-                    <TableCell className="font-medium">${appointment.price}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(appointment.status)} variant="secondary">
-                        {appointment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {appointment.status === "pending" && (
-                          <>
+                <AnimatePresence>
+                  {filteredAppointments.map((appointment, idx) => {
+                    const totalDuration = appointment.services.reduce((sum, s) => sum + s.durationInMinutes, 0);
+                    return (
+                      <motion.tr
+                        key={appointment.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.3, delay: idx * 0.07 }}
+                      >
+                        <TableCell>{appointment.id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{appointment.userName}</p>
+                            <p className="text-sm text-muted-foreground">{appointment.userPhone}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <ul className="list-disc pl-4">
+                            {appointment.services.map((s, i) => (
+                              <li key={i}>{s.name}</li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                        <TableCell>{appointment.date}</TableCell>
+                        <TableCell>{appointment.time}</TableCell>
+                        <TableCell>{totalDuration} min</TableCell>
+                        <TableCell>₹{appointment.totalAmount}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(appointment.status)} variant="secondary">
+                            {appointment.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            {appointment.status.toLowerCase() === "pending" && (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleStatusChange(appointment.id, "Confirmed")}
+                                  title="Confirm"
+                                >
+                                  <CheckCircle className="w-4 h-4 text-success" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleStatusChange(appointment.id, "Cancelled")}
+                                  title="Cancel"
+                                >
+                                  <XCircle className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                            {appointment.status.toLowerCase() === "confirmed" && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleStatusChange(appointment.id, "Completed")}
+                                title="Mark Complete"
+                              >
+                                <CheckCircle className="w-4 h-4 text-info" />
+                              </Button>
+                            )}
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => handleStatusChange(appointment.id, "confirmed")}
-                              title="Confirm"
+                              onClick={() => {
+                                setEditingAppointment(appointment);
+                                setIsDialogOpen(true);
+                              }}
+                              title="Edit"
                             >
-                              <CheckCircle className="w-4 h-4 text-success" />
+                              <Edit className="w-4 h-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => handleStatusChange(appointment.id, "cancelled")}
-                              title="Cancel"
+                              onClick={() => handleDeleteAppointment(appointment.id)}
+                              title="Delete"
                             >
-                              <XCircle className="w-4 h-4 text-destructive" />
+                              <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
-                          </>
-                        )}
-                        {appointment.status === "confirmed" && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleStatusChange(appointment.id, "completed")}
-                            title="Mark Complete"
-                          >
-                            <CheckCircle className="w-4 h-4 text-info" />
-                          </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            setEditingAppointment(appointment);
-                            setIsDialogOpen(true);
-                          }}
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeleteAppointment(appointment.id)}
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    );
+                  })}
+                </AnimatePresence>
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAppointments.map((appointment) => (
-            <Card key={appointment.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground">
-                        {appointment.customerAvatar}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="text-lg">{appointment.customerName}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{appointment.service}</p>
+          <AnimatePresence>
+            {filteredAppointments.map((appointment, idx) => (
+              <motion.div
+                key={appointment.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3, delay: idx * 0.07 }}
+              >
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                            {appointment.userName.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-lg">{appointment.userName}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{appointment.services.map(s => s.name).join(", ")}</p>
+                        </div>
+                      </div>
+                      <Badge className={getStatusColor(appointment.status)} variant="secondary">
+                        {appointment.status}
+                      </Badge>
                     </div>
-                  </div>
-                  <Badge className={getStatusColor(appointment.status)} variant="secondary">
-                    {appointment.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <span>{new Date(appointment.date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-primary" />
-                    <span>{appointment.time}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-primary" />
-                    <span className="truncate">{appointment.customerEmail}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-primary" />
-                    <span>{appointment.customerPhone}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Duration: </span>
-                    <span className="font-medium">{appointment.duration}</span>
-                  </div>
-                  <div className="font-semibold text-lg">${appointment.price}</div>
-                </div>
-                
-                {appointment.notes && (
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-sm font-medium mb-1">Notes:</p>
-                    <p className="text-sm text-muted-foreground">{appointment.notes}</p>
-                  </div>
-                )}
-                
-                <div className="flex gap-2 pt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => {
-                      setEditingAppointment(appointment);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteAppointment(appointment.id)}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                  {appointment.status === "pending" && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleStatusChange(appointment.id, "confirmed")}
-                    >
-                      Confirm
-                    </Button>
-                  )}
-                  {appointment.status === "confirmed" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleStatusChange(appointment.id, "completed")}
-                    >
-                      Complete
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <span>{new Date(appointment.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-primary" />
+                        <span>{appointment.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-primary" />
+                        <span className="truncate">{appointment.userPhone}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Duration: </span>
+                        <span className="font-medium">{appointment.services.reduce((sum, service) => sum + service.durationInMinutes, 0)} min</span>
+                      </div>
+                      <div className="font-semibold text-lg">${appointment.totalAmount}</div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          setEditingAppointment(appointment);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteAppointment(appointment.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                      {appointment.status === "Pending" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusChange(appointment.id, "Confirmed")}
+                        >
+                          Confirm
+                        </Button>
+                      )}
+                      {appointment.status === "Confirmed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStatusChange(appointment.id, "Completed")}
+                        >
+                          Complete
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

@@ -1,11 +1,18 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Phone, MapPin, LogOut, Edit } from "lucide-react";
+import { User, Phone, MapPin, LogOut, Edit } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getUserProfile, updateUserProfile } from "@/service/userService/userService";
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -14,48 +21,102 @@ interface UserProfileModalProps {
 
 export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => {
   const { toast } = useToast();
+  const { user, logout } = useAuth();
+  const userId = user?.id || 0;
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Mock user data - replace with actual user state
+  const [loading, setLoading] = useState(false);
+
   const [userProfile, setUserProfile] = useState({
-    name: "Sarah Johnson",
-    email: "sarah.johnson@email.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main Street, New York, NY 10001"
+    id: 0,
+    name: "",
+    phone: "",
+    address: ""
   });
 
-  const [editData, setEditData] = useState(userProfile);
+  const [editData, setEditData] = useState({
+    id: 0,
+    name: "",
+    address: ""
+  });
 
-  const handleSaveProfile = () => {
-    setUserProfile(editData);
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
+  // Fetch user profile from API when modal opens
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (isOpen && userId) {
+        try {
+          const profile = await getUserProfile(userId);
+          setUserProfile({
+            id: profile.id,
+            name: profile.name,
+            phone: profile.phone,
+            address: profile.address || ""
+          });
+          setEditData({
+            id: profile.id,
+            name: profile.name,
+            address: profile.address || ""
+          });
+        } catch (e) {
+          toast({
+            title: "Error",
+            description: "Failed to fetch profile.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+    fetchProfile();
+  }, [isOpen, userId]);
+
+  const handleSaveProfile = async () => {
+    setLoading(true);
+    try {
+      await updateUserProfile(editData);
+      // Re-fetch profile after update to ensure latest data
+      const profile = await getUserProfile(userId);
+      setUserProfile({
+        id: profile.id,
+        name: profile.name,
+        phone: profile.phone,
+        address: profile.address || ""
+      });
+      setEditData({
+        id: profile.id,
+        name: profile.name,
+        address: profile.address || ""
+      });
+      setIsEditing(false);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditData(userProfile);
+    setEditData({
+      id: userProfile.id,
+      name: userProfile.name,
+      address: userProfile.address
+    });
     setIsEditing(false);
   };
 
   const handleLogout = () => {
-    // Clear all auth-related data from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userSession');
-    
+    localStorage.clear();
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
-    
-    // Redirect to home page or login page
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   return (
@@ -78,6 +139,7 @@ export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => 
 
           {/* Profile Form */}
           <div className="space-y-4">
+            {/* Name Field */}
             <div className="space-y-2">
               <Label htmlFor="name" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
@@ -87,7 +149,9 @@ export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => 
                 <Input
                   id="name"
                   value={editData.name}
-                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  onChange={(e) =>
+                    setEditData({ ...editData, name: e.target.value })
+                  }
                   placeholder="Enter your full name"
                 />
               ) : (
@@ -95,41 +159,21 @@ export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => 
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Email Address
-              </Label>
-              {isEditing ? (
-                <Input
-                  id="email"
-                  type="email"
-                  value={editData.email}
-                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                  placeholder="Enter your email"
-                />
-              ) : (
-                <div className="p-3 bg-muted/50 rounded-md">{userProfile.email}</div>
-              )}
-            </div>
-
+            {/* Phone Field (Disabled) */}
             <div className="space-y-2">
               <Label htmlFor="phone" className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
                 Phone Number
               </Label>
-              {isEditing ? (
-                <Input
-                  id="phone"
-                  value={editData.phone}
-                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-                  placeholder="Enter your phone number"
-                />
-              ) : (
-                <div className="p-3 bg-muted/50 rounded-md">{userProfile.phone}</div>
-              )}
+              <Input
+                id="phone"
+                value={userProfile.phone}
+                disabled
+                className="bg-muted cursor-not-allowed"
+              />
             </div>
 
+            {/* Address Field */}
             <div className="space-y-2">
               <Label htmlFor="address" className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
@@ -139,11 +183,15 @@ export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => 
                 <Input
                   id="address"
                   value={editData.address}
-                  onChange={(e) => setEditData({ ...editData, address: e.target.value })}
+                  onChange={(e) =>
+                    setEditData({ ...editData, address: e.target.value })
+                  }
                   placeholder="Enter your address"
                 />
               ) : (
-                <div className="p-3 bg-muted/50 rounded-md">{userProfile.address}</div>
+                <div className="p-3 bg-muted/50 rounded-md">
+                  {userProfile.address || "Not added"}
+                </div>
               )}
             </div>
           </div>
@@ -152,16 +200,16 @@ export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => 
           <div className="space-y-3">
             {isEditing ? (
               <div className="flex gap-2">
-                <Button onClick={handleSaveProfile} className="flex-1">
-                  Save Changes
+                <Button onClick={handleSaveProfile} className="flex-1" disabled={loading}>
+                  {loading ? "Saving..." : "Save Changes"}
                 </Button>
                 <Button onClick={handleCancelEdit} variant="outline" className="flex-1">
                   Cancel
                 </Button>
               </div>
             ) : (
-              <Button 
-                onClick={() => setIsEditing(true)} 
+              <Button
+                onClick={() => setIsEditing(true)}
                 className="w-full gap-2"
                 variant="outline"
               >
@@ -172,9 +220,9 @@ export const UserProfileModal = ({ isOpen, onClose }: UserProfileModalProps) => 
 
             <Separator />
 
-            <Button 
-              onClick={handleLogout}
-              variant="destructive" 
+            <Button
+              onClick={logout}
+              variant="destructive"
               className="w-full gap-2"
             >
               <LogOut className="w-4 h-4" />

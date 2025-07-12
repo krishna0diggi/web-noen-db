@@ -32,6 +32,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setError(null);
         try {
             const res = await api.post('/auth/login', credentials);
+            console.log(res);
+            console.log(res.data);
+            
+            
             const { token, user } = res.data;
             localStorage.setItem('token', token);
             setToken(token);
@@ -77,7 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            const fetchCurrentUser = response.data.data;
+            // console.log('Current User Response:', response.data);
+            
+            const fetchCurrentUser = response.data;
+            // console.log('Current User:', fetchCurrentUser);
             setUser(fetchCurrentUser)
             setIsAuthenticated(true)
         } catch (error: any) {

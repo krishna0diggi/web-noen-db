@@ -2,7 +2,8 @@ export type User = {
     id?: number,
     name?:string;
     phone?:string,
-    role?:string
+    role?:string,
+    address?: string;
 }
 export type AuthState = {
     user:User | null;
@@ -12,7 +13,7 @@ export type AuthState = {
     error: string | null;
 }
 export type LoginCredentials = {
-    email: string;
+    phone: string;
     password: string;
 }
 export type SignUpCredentials = {

@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UserProfileModal } from "@/components/user/UserProfileModal";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Scissors, ShoppingCart, User, Home, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 
 interface UserLayoutProps {
   children: React.ReactNode;
@@ -13,33 +15,37 @@ interface UserLayoutProps {
 
 const UserLayout = ({ children }: UserLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { cart } = useCart();
+  const { logout } = useAuth();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const navigation = [
     { name: "Home", href: "/user", icon: Home },
     { name: "Services", href: "/user/services", icon: Scissors },
     { name: "Appointments", href: "/user/appointments", icon: Calendar },
-    { name: "Cart & History", href: "/user/cart", icon: ShoppingCart },
+    { name: "Cart", href: "/user/cart", icon: ShoppingCart },
   ];
 
   // Mock cart count - replace with actual cart state
-  const cartCount = 2;
+
+  //  {cart.length > 0 && (
+  //               <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+  //                 {cart.length}
+  //               </span>
+  //             )}
+  // // const cart = []; // Replace with actual cart state from context or props
+  // cart.length
+  const cartCount = cart.length; // Replace with actual cart count from context or props
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userSession');
-    
+    logout();
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
-    
-    window.location.href = '/';
+    navigate("/");
   };
 
   return (
@@ -49,7 +55,7 @@ const UserLayout = ({ children }: UserLayoutProps) => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link to="/user" className="flex items-center space-x-2">
+              <Link to="/" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <Scissors className="w-5 h-5 text-primary-foreground" />
                 </div>
@@ -70,7 +76,7 @@ const UserLayout = ({ children }: UserLayoutProps) => {
                     >
                       <item.icon className="w-4 h-4" />
                       {item.name}
-                      {item.name === "Cart & History" && cartCount > 0 && (
+                      {item.name === "Cart" && cartCount > 0 && (
                         <Badge variant="destructive" className="ml-1 text-xs">
                           {cartCount}
                         </Badge>

@@ -1,4 +1,4 @@
-import { Calendar, Star, Users, ShoppingCart, Settings, Home, Bell, MessageSquare, ArrowUpDown } from "lucide-react";
+import { Calendar, Star, Users, ShoppingCart, Settings, Home, Bell, MessageSquare, ArrowUpDown, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +11,8 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "../ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
   {
@@ -19,50 +21,51 @@ const menuItems = [
     icon: Home,
   },
   {
-    title: "Appointments",
-    url: "/admin/appointments",
-    icon: Calendar,
-    badge: "3",
-  },
-  {
     title: "Services",
     url: "/admin/services",
     icon: Settings,
   },
   {
-    title: "Service Ordering",
-    url: "/admin/service-ordering",
-    icon: ArrowUpDown,
+    title: "Appointments",
+    url: "/admin/appointments",
+    icon: Calendar,
+    badge: "3",
   },
-  {
-    title: "Customers",
-    url: "/admin/customers",
-    icon: Users,
-  },
-  {
-    title: "Orders",
-    url: "/admin/orders",
-    icon: ShoppingCart,
-  },
+  // {
+  //   title: "Service Ordering",
+  //   url: "/admin/service-ordering",
+  //   icon: ArrowUpDown,
+  // },
+  // {
+  //   title: "Customers",
+  //   url: "/admin/customers",
+  //   icon: Users,
+  // },
+  // {
+  //   title: "Orders",
+  //   url: "/admin/orders",
+  //   icon: ShoppingCart,
+  // },
   {
     title: "Reviews",
     url: "/admin/reviews",
     icon: Star,
     badge: "2",
   },
-  {
-    title: "Ratings Management",
-    url: "/admin/ratings",
-    icon: MessageSquare,
-  },
-  {
-    title: "Discount Management",
-    url: "/admin/discounts",
-    icon: MessageSquare,
-  },
+  // {
+  //   title: "Ratings Management",
+  //   url: "/admin/ratings",
+  //   icon: MessageSquare,
+  // },
+  // {
+  //   title: "Discount Management",
+  //   url: "/admin/discounts",
+  //   icon: MessageSquare,
+  // },
 ];
 
 export function AdminSidebar() {
+  const {logout} = useAuth(); // Assuming you have a useAuth hook for authentication
   return (
     <Sidebar className="border-r border-border">
       <SidebarHeader className="p-6">
@@ -104,6 +107,12 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+       <div className="p-4 border-t border-border">
+        <Button variant="outline" className="w-full flex items-center gap-2" onClick={logout}>
+          <LogOut className="w-4 h-4" />
+          Logout
+        </Button>
+      </div>
     </Sidebar>
   );
 }

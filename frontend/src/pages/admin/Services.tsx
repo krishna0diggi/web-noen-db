@@ -1,148 +1,150 @@
-import { useState } from "react";
-import { Plus, Edit, Trash2, Star, DollarSign, Search, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Edit, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory
+} from "@/service/adminService/adminService";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel
+} from "@/components/ui/alert-dialog";
 
-interface Service {
-  id: string;
+interface Category {
+  id: number;
   name: string;
   description: string;
-  price: number;
-  duration: string;
-  rating: number;
-  discount: number;
-  category: string;
-  image: string;
+  slug: string;
 }
 
-const initialServices: Service[] = [
-  {
-    id: "1",
-    name: "Hair Cut & Style",
-    description: "Professional haircut with styling and blow-dry",
-    price: 85,
-    duration: "60 min",
-    rating: 4.8,
-    discount: 10,
-    category: "Hair",
-    image: "💇‍♀️",
-  },
-  {
-    id: "2",
-    name: "Manicure & Pedicure",
-    description: "Complete nail care with gel polish",
-    price: 65,
-    duration: "90 min",
-    rating: 4.9,
-    discount: 0,
-    category: "Nails",
-    image: "💅",
-  },
-  {
-    id: "3",
-    name: "Facial Treatment",
-    description: "Deep cleansing facial with moisturizing",
-    price: 120,
-    duration: "75 min",
-    rating: 4.7,
-    discount: 15,
-    category: "Skincare",
-    image: "🧴",
-  },
-  {
-    id: "4",
-    name: "Eyebrow Threading",
-    description: "Professional eyebrow shaping and threading",
-    price: 25,
-    duration: "30 min",
-    rating: 4.6,
-    discount: 0,
-    category: "Eyebrows",
-    image: "✨",
-  },
-];
-
 export default function Services() {
-  const [services, setServices] = useState<Service[]>(initialServices);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleAddService = (newService: Partial<Service>) => {
-    const service: Service = {
-      id: Date.now().toString(),
-      name: newService.name || "",
-      description: newService.description || "",
-      price: newService.price || 0,
-      duration: newService.duration || "",
-      rating: 0,
-      discount: newService.discount || 0,
-      category: newService.category || "",
-      image: newService.image || "💄",
-    };
-    setServices([...services, service]);
-    setIsDialogOpen(false);
-    toast({
-      title: "Service Created",
-      description: `${service.name} has been added to your services.`,
-    });
+  useEffect(() => {
+    async function fetchCategories() {
+      const data = await getCategories();
+      setCategories(data);
+    }
+    fetchCategories();
+  }, []);
+
+  const handleAddCategory = async (data: Partial<Category>) => {
+    if (editingCategory) {
+      // Update existing category via API
+      try {
+        const updated = await updateCategory(editingCategory.id, data);
+        setCategories(categories.map((cat) =>
+          cat.id === editingCategory.id ? updated : cat
+        ));
+        toast({
+          title: "Category Updated",
+          description: `${updated.name} updated successfully.`,
+        });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Failed to update category.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Add new category via API
+      try {
+        const newCategory = await createCategory(data);
+        setCategories([...categories, newCategory]);
+        toast({
+          title: "Category Added",
+          description: `${newCategory.name} created successfully.`,
+        });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Failed to add category.",
+          variant: "destructive"
+        });
+      }
+    }
+    setIsCategoryDialogOpen(false);
+    setEditingCategory(null);
   };
 
-  const handleEditService = (id: string, updatedService: Partial<Service>) => {
-    const service = services.find(s => s.id === id);
-    setServices(services.map(service => 
-      service.id === id ? { ...service, ...updatedService } : service
-    ));
-    setEditingService(null);
-    setIsDialogOpen(false);
-    toast({
-      title: "Service Updated",
-      description: `${service?.name} has been successfully updated.`,
-    });
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setIsCategoryDialogOpen(true);
   };
 
-  const handleDeleteService = (id: string) => {
-    const service = services.find(s => s.id === id);
-    setServices(services.filter(service => service.id !== id));
-    toast({
-      title: "Service Deleted",
-      description: `${service?.name} has been removed from your services.`,
-      variant: "destructive",
-    });
+  const handleDeleteCategory = (category: Category) => {
+    setCategoryToDelete(category);
+    setDeleteDialogOpen(true);
   };
 
-  const categories = Array.from(new Set(services.map(service => service.category)));
-  
-  const filteredServices = services.filter(service => {
-    const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || service.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    try {
+      await deleteCategory(categoryToDelete.id);
+      setCategories(categories.filter((c) => c.id !== categoryToDelete.id));
+      toast({
+        title: "Category Deleted",
+        description: `${categoryToDelete.name} has been removed successfully.`,
+        variant: "destructive"
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete the category.",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+    }
+  };
 
-  const ServiceForm = ({ service, onSubmit, onCancel }: {
-    service?: Service | null;
-    onSubmit: (service: Partial<Service>) => void;
-    onCancel: () => void;
-  }) => {
+  const CategoryForm = ({ onSubmit, onCancel, initialData }: { onSubmit: (data: Partial<Category>) => void; onCancel: () => void; initialData?: Partial<Category> }) => {
     const [formData, setFormData] = useState({
-      name: service?.name || "",
-      description: service?.description || "",
-      price: service?.price || 0,
-      duration: service?.duration || "",
-      discount: service?.discount || 0,
-      category: service?.category || "",
-      image: service?.image || "💄",
+      name: initialData?.name || "",
+      description: initialData?.description || ""
     });
+
+    useEffect(() => {
+      setFormData({
+        name: initialData?.name || "",
+        description: initialData?.description || ""
+      });
+    }, [initialData]);
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -151,88 +153,20 @@ export default function Services() {
 
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="name">Service Name</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Input
-              id="category"
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
-              required
-            />
-          </div>
-        </div>
-        
-        <div>
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-            required
-          />
-        </div>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="price">Price ($)</Label>
-            <Input
-              id="price"
-              type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="duration">Duration</Label>
-            <Input
-              id="duration"
-              value={formData.duration}
-              onChange={(e) => setFormData({...formData, duration: e.target.value})}
-              placeholder="e.g., 60 min"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="discount">Discount (%)</Label>
-            <Input
-              id="discount"
-              type="number"
-              value={formData.discount}
-              onChange={(e) => setFormData({...formData, discount: Number(e.target.value)})}
-              min="0"
-              max="100"
-            />
-          </div>
-        </div>
-        
-        <div>
-          <Label htmlFor="image">Emoji Icon</Label>
-          <Input
-            id="image"
-            value={formData.image}
-            onChange={(e) => setFormData({...formData, image: e.target.value})}
-            placeholder="💄"
-          />
-        </div>
-        
-        <div className="flex gap-2 pt-4">
-          <Button type="submit" className="flex-1">
-            {service ? "Update Service" : "Add Service"}
-          </Button>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
+        <Label>Name</Label>
+        <Input
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+        />
+        <Label>Description</Label>
+        <Textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        />
+        <div className="flex gap-2">
+          <Button type="submit" className="flex-1">{initialData ? "Update Category" : "Add Category"}</Button>
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
         </div>
       </form>
     );
@@ -240,118 +174,86 @@ export default function Services() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Services Management</h1>
-          <p className="text-muted-foreground">Manage your salon services, pricing, and discounts</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Service Categories</h1>
+        <Dialog open={isCategoryDialogOpen} onOpenChange={(open) => { setIsCategoryDialogOpen(open); if (!open) setEditingCategory(null); }}>
           <DialogTrigger asChild>
-            <Button className="gap-2" onClick={() => setEditingService(null)}>
-              <Plus className="w-4 h-4" />
-              Add New Service
+            <Button variant="outline" onClick={() => { setEditingCategory(null); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Category
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>
-                {editingService ? "Edit Service" : "Add New Service"}
-              </DialogTitle>
+              <DialogTitle>{editingCategory ? "Edit Category" : "Add Category"}</DialogTitle>
             </DialogHeader>
-            <ServiceForm
-              service={editingService}
-              onSubmit={editingService 
-                ? (data) => handleEditService(editingService.id, data)
-                : handleAddService
-              }
-              onCancel={() => setIsDialogOpen(false)}
+            <CategoryForm
+              onSubmit={handleAddCategory}
+              onCancel={() => { setIsCategoryDialogOpen(false); setEditingCategory(null); }}
+              initialData={editingCategory || undefined}
             />
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search services..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="w-full sm:w-48 p-2 border border-border rounded-md bg-background"
-        >
-          <option value="all">All Categories</option>
-          {categories.map(category => (
-            <option key={category} value={category}>{category}</option>
-          ))}
-        </select>
-      </div>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this category? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCategory} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredServices.map((service) => (
-          <Card key={service.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">{service.image}</div>
-                  <div>
-                    <CardTitle className="text-lg">{service.name}</CardTitle>
-                    <Badge variant="secondary" className="text-xs">
-                      {service.category}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      setEditingService(service);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleDeleteService(service.id)}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
+      {/* Category Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {categories.map((category) => (
+          <Card key={category.id} className="hover:shadow-md">
+            <CardHeader className="pb-2 flex justify-between items-start">
+              <div>
+                <CardTitle>{category.name}</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {category.description}
+                </p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">{service.description}</p>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-success" />
-                  <span className="font-semibold text-foreground">${service.price}</span>
-                  {service.discount > 0 && (
-                    <Badge variant="secondary" className="bg-success text-success-foreground">
-                      -{service.discount}%
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-sm text-muted-foreground">{service.duration}</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-warning fill-current" />
-                  <span className="text-sm font-medium">{service.rating}</span>
-                </div>
-                <Button variant="outline" size="sm">
-                  View Details
+              <div className="flex gap-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => handleEditCategory(category)}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => handleDeleteCategory(category)}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
                 </Button>
               </div>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="link"
+                className="px-0 text-blue-600"
+                onClick={() =>
+                  navigate(`/admin/services/${category.slug}`, {
+                    state: { id: category.id },
+                  })
+                }
+              >
+                See All Services
+              </Button>
             </CardContent>
           </Card>
         ))}

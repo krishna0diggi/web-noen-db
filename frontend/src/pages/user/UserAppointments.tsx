@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,16 @@ import { useToast } from "@/hooks/use-toast";
 import { BookingModal } from "@/components/user/BookingModal";
 import { ReviewModal } from "@/components/user/ReviewModal";
 import { reviewStore } from "@/lib/review-store";
+import { useAuth } from "@/contexts/AuthContext";
+import { getAppointmentByUserId } from "@/service/appoinmentService/appoinmentService";
+import { motion, AnimatePresence } from "framer-motion";
 
 const UserAppointments = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -25,54 +32,6 @@ const UserAppointments = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedAppointmentForBooking, setSelectedAppointmentForBooking] = useState<any>(null);
   const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState<any>(null);
-
-  // Mock appointment data - replace with API calls
-  const appointments = [
-    {
-      id: 1,
-      service: "Hair Styling",
-      stylist: "Sarah Johnson",
-      date: "2024-01-20",
-      time: "10:00 AM",
-      duration: 60,
-      location: "Main Salon",
-      status: "confirmed",
-      price: 50,
-    },
-    {
-      id: 2,
-      service: "Facial Treatment",
-      stylist: "Maria Garcia",
-      date: "2024-01-25",
-      time: "2:00 PM",
-      duration: 90,
-      location: "Spa Room 1",
-      status: "pending",
-      price: 80,
-    },
-    {
-      id: 3,
-      service: "Manicure",
-      stylist: "Lisa Chen",
-      date: "2024-01-15",
-      time: "3:30 PM",
-      duration: 45,
-      location: "Nail Station",
-      status: "completed",
-      price: 35,
-    },
-    {
-      id: 4,
-      service: "Hair Coloring",
-      stylist: "Emma Wilson",
-      date: "2024-01-10",
-      time: "9:00 AM",
-      duration: 180,
-      location: "Color Room",
-      status: "cancelled",
-      price: 150,
-    },
-  ];
 
   // Mock available services for booking
   const services = [
@@ -91,13 +50,6 @@ const UserAppointments = () => {
   const stylists = [
     "Sarah Johnson", "Maria Garcia", "Lisa Chen", "Emma Wilson", "Kate Brown"
   ];
-
-  const filteredAppointments = appointments.filter((appointment) => {
-    const matchesSearch = appointment.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.stylist.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || appointment.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -162,6 +114,23 @@ const UserAppointments = () => {
     setSelectedAppointmentForReview(null);
   };
 
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getAppointmentByUserId(user.id);
+        setAppointments(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        setError("Failed to fetch appointments.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAppointments();
+  }, [user?.id]);
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -177,10 +146,10 @@ const UserAppointments = () => {
         
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="lg" className="gap-2">
+            {/* <Button size="lg" className="gap-2">
               <Plus className="w-5 h-5" />
               Book New Appointment
-            </Button>
+            </Button> */}
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -196,7 +165,7 @@ const UserAppointments = () => {
                   <SelectContent>
                     {services.map((service) => (
                       <SelectItem key={service.id} value={service.id.toString()}>
-                        {service.name} - ${service.price} ({service.duration}min)
+                        {service.name} - ₹{service.price} ({service.duration}min)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -270,136 +239,123 @@ const UserAppointments = () => {
         </Dialog>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search appointments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Appointments List */}
-      <div className="space-y-4">
-        {filteredAppointments.map((appointment) => (
-          <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold">{appointment.service}</h3>
-                    <Badge variant={getStatusColor(appointment.status)}>
-                      {appointment.status}
-                    </Badge>
-                  </div>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      {appointment.stylist}
+      <div className="space-y-6">
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center text-destructive py-8">{error}</div>
+        ) : appointments.length === 0 ? (
+          <div className="text-center text-muted-foreground py-8">No appointments found.</div>
+        ) : (
+          <AnimatePresence>
+            {[...appointments].reverse().map((appointment, idx) => (
+              <motion.div
+                key={appointment.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3, delay: idx * 0.07 }}
+              >
+                <Card className="hover:shadow-lg transition-shadow border-2 border-transparent hover:border-primary/40 bg-card/90">
+                  <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    {/* Left: Appointment Info */}
+                    <div className="flex-1 space-y-2 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold text-muted-foreground">Appointment #</span>
+                        <span className="text-sm font-bold text-primary">{idx + 1}</span>
+                        <Badge variant={getStatusColor(appointment.status?.toLowerCase())} className="capitalize">
+                          {appointment.status}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="w-4 h-4" />
+                          {appointment.date}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {appointment.time} <span className="ml-1">({appointment.duration})</span>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <div className="font-semibold mb-1">Services Booked:</div>
+                        <ul className="divide-y divide-border bg-muted/40 rounded-lg overflow-hidden">
+                          {appointment.services?.map((service: any, idx: number) => (
+                            <li key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2">
+                              <span className="font-medium text-foreground">{service.name}</span>
+                              <span className="text-xs text-muted-foreground mt-1 sm:mt-0">
+                                ₹{service.price} • {service.durationInMinutes} min
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="w-4 h-4" />
-                      {appointment.date}
+                    {/* Right: Actions & Total */}
+                    <div className="flex flex-col items-end gap-3 min-w-[140px]">
+                      <div className="text-lg font-bold text-primary mb-1">Total: ₹{appointment.totalAmount}</div>
+                      {appointment.status?.toLowerCase() === "confirmed" && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRescheduleAppointment(appointment.id)}
+                          >
+                            Reschedule
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleCancelAppointment(appointment.id)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                      {appointment.status?.toLowerCase() === "pending" && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelAppointment(appointment.id)}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                      {appointment.status?.toLowerCase() === "completed" && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => handleBookAgain(appointment)}
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            Book Again
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => handleLeaveReview(appointment)}
+                            disabled={!!reviewStore.getReviewByAppointment(appointment.id?.toString())}
+                          >
+                            <Star className="w-4 h-4" />
+                            {reviewStore.getReviewByAppointment(appointment.id?.toString()) ? "Reviewed" : "Leave Review"}
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      {appointment.time} ({appointment.duration}min)
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      {appointment.location}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-                  <div className="text-2xl font-bold text-primary">
-                    ${appointment.price}
-                  </div>
-                  
-                  {appointment.status === "confirmed" && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRescheduleAppointment(appointment.id)}
-                      >
-                        Reschedule
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleCancelAppointment(appointment.id)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {appointment.status === "pending" && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleCancelAppointment(appointment.id)}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                  
-                  {appointment.status === "completed" && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => handleBookAgain(appointment)}
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                        Book Again
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => handleLeaveReview(appointment)}
-                        disabled={!!reviewStore.getReviewByAppointment(appointment.id.toString())}
-                      >
-                        <Star className="w-4 h-4" />
-                        {reviewStore.getReviewByAppointment(appointment.id.toString()) ? "Reviewed" : "Leave Review"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
       </div>
 
-      {filteredAppointments.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-muted-foreground">No appointments found.</div>
-        </div>
-      )}
+
 
       {/* Booking Modal */}
       {selectedAppointmentForBooking && (

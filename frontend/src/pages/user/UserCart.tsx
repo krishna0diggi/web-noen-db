@@ -194,7 +194,7 @@ const UserCart = () => {
                           <div className="flex items-start justify-between">
                             <h3 className="text-lg sm:text-xl font-semibold pr-2">{item.service}</h3>
                             <div className="text-xl sm:text-2xl font-bold text-primary whitespace-nowrap">
-                              ${item.price}
+                              ₹{item.price}
                             </div>
                           </div>
                           
@@ -269,7 +269,7 @@ const UserCart = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm sm:text-base">
                         <span>Services ({cartItems.length})</span>
-                        <span className="font-medium">${calculateTotal()}</span>
+                        <span className="font-medium">₹{calculateTotal()}</span>
                       </div>
                       <div className="flex justify-between text-sm sm:text-base">
                         <span>Total Duration</span>
@@ -278,7 +278,7 @@ const UserCart = () => {
                       <Separator />
                       <div className="flex justify-between font-semibold text-lg sm:text-xl">
                         <span>Total</span>
-                        <span className="text-primary">${calculateTotal()}</span>
+                        <span className="text-primary">₹{calculateTotal()}</span>
                       </div>
                     </div>
                     
@@ -317,7 +317,7 @@ const UserCart = () => {
                       <div className="flex items-start justify-between">
                         <h3 className="text-lg sm:text-xl font-semibold pr-2">{booking.service}</h3>
                         <div className="text-xl sm:text-2xl font-bold text-primary whitespace-nowrap">
-                          ${booking.price}
+                          ₹{booking.price}
                         </div>
                       </div>
                       
