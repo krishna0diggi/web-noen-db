@@ -53,7 +53,15 @@ const Register: React.FC<ForgotPasswordProps> = ({ phone }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 dark:bg-[#18181b]">
       {loading ? (
-        <LoadingSpinner className="py-20" />
+        <motion.div
+          key="loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="flex items-center justify-center w-full h-full py-20"
+        >
+          <LoadingSpinner />
+        </motion.div>
       ) : (
         <motion.form
           onSubmit={handleSubmit}
@@ -63,9 +71,9 @@ const Register: React.FC<ForgotPasswordProps> = ({ phone }) => {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <div className="flex justify-center mb-4">
-            <UserPlus className="text-green-600 dark:text-green-400 w-10 h-10" />
+            <UserPlus className="text-primary dark:text-primary-dark w-10 h-10" />
           </div>
-          <h2 className="text-2xl font-semibold text-center mb-4 text-green-600 dark:text-green-400">
+          <h2 className="text-2xl font-semibold text-center mb-4 text-primary dark:text-primary-dark">
             Register
           </h2>
           <div className="mb-3">
@@ -147,7 +155,7 @@ const Register: React.FC<ForgotPasswordProps> = ({ phone }) => {
           </div>
           <button
             type="submit"
-            className="w-full bg-green-600 dark:bg-green-500 text-white py-2 rounded-md hover:bg-green-700 dark:hover:bg-green-600 transition"
+            className="w-full bg-primary dark:bg-primary-dark text-white py-2 rounded-md hover:bg-primary/90 dark:hover:bg-primary-dark/90 transition"
           >
             Register
           </button>
