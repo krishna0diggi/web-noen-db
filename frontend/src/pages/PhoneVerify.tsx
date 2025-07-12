@@ -42,6 +42,8 @@ const PhoneVerify: React.FC<PhoneVerifyProps> = ({ isForgot }) => {
         setPhone(user_phone_number);
         // Use the new service
         const exists = await verifyPhoneNumber(user_phone_number);
+        console.log(exists);
+        
         setPhoneExist(exists);
       };
       window.phoneEmailListener = phoneEmailListener;

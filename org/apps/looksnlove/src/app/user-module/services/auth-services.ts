@@ -1,4 +1,3 @@
-
 import {
   BadRequestException,
   Injectable,
@@ -105,19 +104,24 @@ export class AuthService {
     return { message: 'User Registered Successfully' };
   }
 
-
-  async verifyPhone(phone: string) {
+  async verifyPhone(phone: string): Promise<{ exists: boolean }> {
     const user = await this.user.findOne({ where: { phone } });
+
     if (!user) {
-      throw new NotFoundException('User not found');
+      return { exists: false };
     }
+
     if (!user.isVerified) {
       throw new UnauthorizedException('User is not verified');
     }
-    return user;
+
+    return { exists: true };
   }
 
-  async forgotPassword(phone: string, newPassword: string): Promise<{ message: string }> {
+  async forgotPassword(
+    phone: string,
+    newPassword: string
+  ): Promise<{ message: string }> {
     const user = await this.user.findOne({ where: { phone } });
     if (!user) {
       throw new NotFoundException('User not found');
