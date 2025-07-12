@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from '@/service/userService/userService';
+import { toast } from '@/components/ui/use-toast';
 import * as Label from "@radix-ui/react-label";
 import { UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
@@ -42,12 +43,21 @@ const Register: React.FC<ForgotPasswordProps> = ({ phone }) => {
         role_id: Number(form.role_id),
         address: form.address,
       };
-      await registerUser(payload);
+      const res = await registerUser(payload);
       setLoading(false);
+      toast({
+        title: 'Registration Successful',
+        description: res?.message || 'You have registered successfully.',
+        variant: 'default',
+      });
       navigate("/login");
-    } catch (err) {
+    } catch (err: any) {
       setLoading(false);
-      // handle error
+      toast({
+        title: 'Registration Failed',
+        description: err?.response?.data?.message || 'Registration failed. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
