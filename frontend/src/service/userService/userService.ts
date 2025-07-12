@@ -1,3 +1,12 @@
+export const registerUser = async (userData: any) => {
+  try {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  } catch (error) {
+    console.error("Error registering user:", error);
+    throw error;
+  }
+};
 export const forgotPasswordService = async (phone: string, newPassword: string) => {
   try {
     const res = await api.post('/auth/forgot-password', { phone, newPassword });

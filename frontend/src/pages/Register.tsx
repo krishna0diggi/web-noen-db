@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { registerUser } from '@/service/userService/userService';
 import * as Label from "@radix-ui/react-label";
 import { UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
@@ -33,17 +34,17 @@ const Register: React.FC<ForgotPasswordProps> = ({ phone }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Replace with your API call
       const payload = {
-        ...form,
+        name: form.name,
+        phone: form.phone,
+        password: form.password,
         otp: Number(form.otp),
         role_id: Number(form.role_id),
+        address: form.address,
       };
-      // await api.register(payload);
-      setTimeout(() => {
-        setLoading(false);
-        navigate("/login");
-      }, 1200);
+      await registerUser(payload);
+      setLoading(false);
+      navigate("/login");
     } catch (err) {
       setLoading(false);
       // handle error
