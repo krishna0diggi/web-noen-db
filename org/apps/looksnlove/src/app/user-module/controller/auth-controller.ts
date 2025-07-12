@@ -1,3 +1,4 @@
+
 import {
   Body,
   Controller,
@@ -48,5 +49,10 @@ export class AuthController {
   @Put('profile')
   async updateProfile(@Body('id') id: number, @Body() dto: any) {
     return this.userProfileService.updateProfile(id, dto);
+  }
+
+    @Post('forgot-password')
+  async forgotPassword(@Body('phone') phone: string, @Body('newPassword') newPassword: string) {
+    return this.authService.forgotPassword(phone, newPassword);
   }
 }
