@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '@/contexts/AuthContext';
 import { registerUser } from '@/service/userService/userService';
 import { toast } from '@/components/ui/use-toast';
 import * as Label from "@radix-ui/react-label";
@@ -14,7 +15,15 @@ type ForgotPasswordProps = {
 };
 
 const Register: React.FC<ForgotPasswordProps> = ({ phone }) => {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+  // ...existing code...
   const [form, setForm] = useState({
     name: "",
     phone: "",

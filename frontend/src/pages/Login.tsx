@@ -16,11 +16,15 @@ const Login: React.FC<ForgotPasswordProps> = ({ phone }) => {
   const { login, user, isLoading, error } = useAuth();
   const [form, setForm] = useState({ phone: phone || "", password: "" });
 
+  const { isAuthenticated } = useAuth();
   useEffect(() => {
     if (user) {
       redirectBasedOnRole(user.role);
     }
-  }, [user]);
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [user, isAuthenticated, navigate]);
 
   const redirectBasedOnRole = (role: string) => {
     switch (role) {

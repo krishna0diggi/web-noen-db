@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { forgotPasswordService } from '@/service/userService/userService';
 import { toast } from '@/components/ui/use-toast';
 import { motion } from 'framer-motion';
@@ -11,7 +13,14 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ phone: propPhone }) => 
   const phone = propPhone || '';
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  // Remove local success/error, use toast
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
