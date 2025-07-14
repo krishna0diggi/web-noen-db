@@ -95,7 +95,7 @@ export class AuthService {
       password: hashedPassword,
       otp: registerdto.otp.toString(),
       role: role,
-      isVerified: false,
+      isVerified: true,
       otpExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
       address: registerdto.address,
     };
